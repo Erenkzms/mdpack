@@ -33,7 +33,7 @@ jobs:
             --arg url "$(jq -r .url release.json)" \
             --arg desc "$(jq -r '.body[:3800]' release.json)" \
             '{username: "MDPack Güncellemeleri", embeds: [{title: $title, url: $url, description: $desc, color: 3900150}]}' > payload.json
-          WEBHOOK=$(printf '%s' "$DISCORD_WEBHOOK_URL" | tr -d '\r\n[:space:]')
+          WEBHOOK=$(printf '%s' "$DISCORD_WEBHOOK_URL" | sed 's/^\xef\xbb\xbf//' | tr -d '\r\n[:space:]')
           STATUS=$(curl -sS -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -d @payload.json "$WEBHOOK")
           echo "Discord yanıtı: $STATUS"
           test "$STATUS" = "204"
