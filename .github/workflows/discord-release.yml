@@ -1,0 +1,38 @@
+name: Discord yayın bildirimi
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Bildirilecek sürüm etiketi (örn. v1.0.9)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Yayın bilgisini oku
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json tagName,body,url > release.json
+
+      - name: Discord kanalına gönder
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+          jq -n \
+            --arg title "MDPack $(jq -r .tagName release.json) yayınlandı" \
+            --arg url "$(jq -r .url release.json)" \
+            --arg desc "$(jq -r '.body[:3800]' release.json)" \
+            '{username: "MDPack Güncellemeleri", embeds: [{title: $title, url: $url, description: $desc, color: 3900150}]}' > payload.json
+          STATUS=$(curl -sS -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -d @payload.json "$DISCORD_WEBHOOK_URL")
+          echo "Discord yanıtı: $STATUS"
+          test "$STATUS" = "204"
