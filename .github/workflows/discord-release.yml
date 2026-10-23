@@ -46,7 +46,7 @@ jobs:
                 url: $url,
                 description: ($desc | .[:3800]),
                 color: 26367,
-                fields: [{name: "Nasıl güncellenir?", value: "Uygulamayı aç. Yeni sürüm göründüğünde **Güncelle**'ye bas; MDPack kendini yeniden başlatır."}],
+                fields: [{name: "Nasıl güncellenir?", value: "Uygulamayı aç. Yeni sürüm göründüğünde **Güncelle** düğmesine bas; MDPack kendini yeniden başlatır."}],
                 footer: {text: "MDPack · Windows optimizasyon aracı"},
                 timestamp: $time
               }]
