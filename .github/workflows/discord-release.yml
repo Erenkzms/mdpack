@@ -28,11 +28,29 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           set -euo pipefail
+          TAG=$(jq -r .tagName release.json)
+          URL=$(jq -r .url release.json)
+          # Yayın notundaki her dolu satır bir madde olur.
+          BULLETS=$(jq -r '.body' release.json | sed -e '/^[[:space:]]*$/d' -e 's/^/▸ /')
+          DESC=$(printf 'Bu sürümde neler değişti?\n\n%s' "$BULLETS")
           jq -n \
-            --arg title "MDPack $(jq -r .tagName release.json) yayınlandı" \
-            --arg url "$(jq -r .url release.json)" \
-            --arg desc "$(jq -r '.body[:3800]' release.json)" \
-            '{username: "MDPack Güncellemeleri", embeds: [{title: $title, url: $url, description: $desc, color: 3900150}]}' > payload.json
+            --arg title "MDPack $TAG hazır" \
+            --arg url "$URL" \
+            --arg desc "$DESC" \
+            --arg time "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{
+              username: "MDPack",
+              embeds: [{
+                author: {name: "MDPack · yeni sürüm"},
+                title: $title,
+                url: $url,
+                description: ($desc | .[:3800]),
+                color: 26367,
+                fields: [{name: "Nasıl güncellenir?", value: "Uygulamayı aç. Yeni sürüm göründüğünde **Güncelle**'ye bas; MDPack kendini yeniden başlatır."}],
+                footer: {text: "MDPack · Windows optimizasyon aracı"},
+                timestamp: $time
+              }]
+            }' > payload.json
           WEBHOOK=$(printf '%s' "$DISCORD_WEBHOOK_URL" | sed 's/^\xef\xbb\xbf//' | tr -d '\r\n[:space:]')
           STATUS=$(curl -sS -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -d @payload.json "$WEBHOOK")
           echo "Discord yanıtı: $STATUS"
